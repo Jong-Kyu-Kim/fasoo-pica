@@ -1,0 +1,106 @@
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const webpack = require('webpack');
+
+const config = {
+  entry: './src/main.js',
+  mode: 'development',
+  module: {
+    rules: [
+      {
+        test: /\.js?$/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              '@babel/preset-env',
+              '@babel/preset-react',
+              // '@babel/preset-typescript'
+            ],
+            plugins: ['babel-plugin-smart-webpack-import'],
+          },
+        },
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          // 'style-loader',
+          'css-loader',
+          'sass-loader',
+        ],
+      },
+      {
+        test: [/\.svg$/, /\.png$/],
+        use: {
+          loader: 'url-loader',
+          // options: {
+          //   name: '[name].[ext]?[hash]',
+          //   publicPath: './dist/',
+          //   limit: 10000 // 10kb
+          // }
+        },
+      },
+    ],
+  },
+  resolve: {
+    extensions: ['.js', '.jsx', '.svg'],
+    alias: {
+      Components: path.resolve(__dirname, 'src/components/'),
+      svg: path.resolve(__dirname, 'src/svg/'),
+    },
+  },
+
+  optimization: {
+    runtimeChunk: {
+      name: 'runtime',
+    },
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          chunks: 'initial',
+          name: 'vendor',
+          enforce: true,
+        },
+      },
+    },
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    publicPath: '/',
+    //filename: '[name].[chunkhash].js'
+    filename: '[chunkhash].js',
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html',
+      // filename: 'test.html',
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'index.css',
+    }),
+    //new webpack.HotModuleReplacementPlugin(),
+  ],
+};
+
+module.exports = (env, argv) => {
+  if (argv.mode === 'development') {
+    config.devtool = 'inline-source-map';
+    //config.devtool = 'eval-cheap-source-map';
+    //config.devtool = 'eval-source-map';
+  }
+
+  if (argv.mode === 'production') {
+    config.output.publicPath = './';
+    config.plugins.push(
+      //new BundleAnalyzerPlugin(),
+      new CleanWebpackPlugin()
+    );
+  }
+
+  return config;
+};
